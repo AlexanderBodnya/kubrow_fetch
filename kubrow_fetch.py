@@ -1,7 +1,9 @@
+from tkinter import *
+import keyboard
+import pyautogui
 import requests
 import logging
 import json
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -16,7 +18,6 @@ def log_call(f):
         logger.info('Calling {}...'.format(f.__name__))
         f(*args, **kwargs)
     return f
-
 
 
 class WarframeMarketItemApi():
@@ -48,7 +49,54 @@ class WarframeMarketItemApi():
         for item in self.last_2_days_stats:
             print('{} - Min price: {} - Max price: {} - Average: {}'.format(item['datetime'], item['min_price'], item['max_price'], item['avg_price']))
 
+        return self.last_2_days_stats[0]['avg_price']
 
-a = WarframeMarketItemApi('Mesa Prime')
+class App():
+    def __init__(self):
+        self.root = Tk()
 
-a.get_statistics()
+        self.is_hidden = True
+
+        # removes windows borders
+        self.root.overrideredirect(1)
+
+        # sets opacity
+        self.root.attributes("-alpha", 0.8)
+
+        ''' Places window above all other windows in the window stack. '''
+        self.root.wm_attributes("-topmost", True)
+
+        self.frame = Frame(self.root, width=320, height=200,
+                           borderwidth=0, relief=RAISED, background='blue')
+        self.frame.pack_propagate(False)
+        self.frame.pack()
+
+        self.text = Text(self.frame, background='black', foreground='white', borderwidth=0)
+        self.text.pack()
+ 
+
+
+        keyboard.add_hotkey('ctrl+alt+s', self.toggle_visibility)
+        self.root.withdraw()
+
+    def toggle_visibility(self):
+        self.root.update()
+        x, y = pyautogui.position()
+        if self.is_hidden:
+            text = self.root.clipboard_get()
+            a = WarframeMarketItemApi(text)
+            res = a.get_statistics()
+            self.text.delete('1.0', END)
+            self.text.insert(END, res)
+            self.root.geometry('+{}+{}'.format(x,y))
+            self.root.deiconify()
+            self.is_hidden = False
+
+        else:
+            self.root.withdraw()
+            self.is_hidden = True
+
+
+app = App()
+app.root.mainloop()
+
